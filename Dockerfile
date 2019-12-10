@@ -13,7 +13,7 @@ LABEL org.label-schema.description="Baseline for anaconda-project serving a note
 LABEL org.label-schema.vcs-url="https://github.com/andrew-mcgrath/ap-notebook-base-image"
 LABEL org.label-schema.vcs-ref=$VCS_REF
 LABEL org.label-schema.version=$BUILD_VERSION
-LABEL org.label-schema.docker.cmd="docker run -p 8888:8888 -d amcgrath/ap-notebook-base-image"
+LABEL org.label-schema.docker.cmd="docker run -p 8443:8443 -d amcgrath/ap-notebook-base-image"
 
 # install anaconda project
 RUN /opt/conda/bin/conda create -n project -c defaults -c conda-forge anaconda-project \
@@ -23,7 +23,10 @@ RUN /opt/conda/bin/conda create -n project -c defaults -c conda-forge anaconda-p
 COPY --chown=anaconda:anaconda jupyter_notebook_config.py /opt/project/
 COPY --chown=anaconda:anaconda docker-entrypoint.sh /
 
-# expose the jupyter notebook default port
+# certificate generation
+RUN openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /opt/project/notebook.key -out /opt/project/notebook.pem
+
+# expose the jupyter notebook default encrypted port
 EXPOSE 8443
 
 # runs anaconda project
