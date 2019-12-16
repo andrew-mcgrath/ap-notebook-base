@@ -18,6 +18,13 @@ The notebook will be reachable on port `8443` over `https`.
 
 ## Anaconda Project File
 
+The `anaconda-project` file must include two commands 
+
+1. `default` for running the notebook itself
+1. `trust` so that the notebook can run as a trusted notebook
+
+Example `anaconda-project` file
+
 ```yaml
 # ...
 commands:
@@ -32,12 +39,28 @@ commands:
 
 ## Anaconda Project Dockerfile
 
-## Docker
+The `anaconda-project` docker file will need to include the following in order to serve up desired content
 
-The container delivers a base image to publish a trusted jupyter notebook via `anaconda-project`, exposed via https, 
-on port 8443.
+```dockerfile
+FROM amcgrath/ap-notebook-base
 
-### Build Locally
+# Copy the notebook and supporting libraries
+# Make use of a .dockerignore file to filter unnecessary content
+COPY --chown=anaconda:anaconda . /opt/project/
+
+# install all of the dependencies for the project
+RUN /opt/conda/bin/conda run -n project anaconda-project prepare --directory /opt/project \
+  && /opt/conda/bin/conda clean --all -y
+
+# trust the notebook
+RUN /opt/conda/bin/conda run -n project anaconda-project run \
+  --directory /opt/project trust
+```
+
+The above example is an excerpt from the [dockerfile][ap-trusted-notebook-dockerfile] in 
+[andrew-mcgrath/ap-trusted-notebook][ap-trusted-notebook]. 
+
+# Build Locally
 
 To build the container image, simply execute a standard docker build command.
 
@@ -49,3 +72,6 @@ docker build \
   --build-arg BUILD_VERSION=$(git describe --tags --dirty) \
   -t $IMAGE_NAME .
 ```
+
+[ap-trusted-notebook]: https://github.com/andrew-mcgrath/ap-trusted-notebook
+[ap-trusted-notebook-dockerfile]: https://github.com/andrew-mcgrath/ap-trusted-notebook/blob/master/Dockerfile
